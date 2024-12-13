@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Analysis Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .restaurant-card {
+            margin: 10px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .weather-info {
+            display: flex;
+            gap: 20px;
+        }
+        .price-prediction {
+            background-color: #e9f5ff;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .price-change-positive {
+            color: #d32f2f;
+        }
+        .price-change-negative {
+            color: #388e3c;
+        }
+    </style>
+</head>
+<body>
+    <h1>Restaurant Analysis Results</h1>
+    
+    <div class="section" id="village-details">
+        <h2>Village Restaurant Details</h2>
+        <div id="village-info"></div>
+    </div>
+
+    <div class="section" id="conditions">
+        <h2>Current Conditions</h2>
+        <div class="weather-info">
+            <div id="weather-data"></div>
+            <div id="busy-status"></div>
+        </div>
+    </div>
+
+    <div class="section" id="price-predictions">
+        <h2>Menu Price Analysis</h2>
+        <div id="predictions"></div>
+    </div>
+
+    <div class="section" id="nearby-restaurants">
+        <h2>Nearby Restaurants</h2>
+        <div id="nearby-list"></div>
+    </div>
+
+    <script>
+        fetch('data.json')
+            .then(response => response.json())
+            .then(data => {
+                // Display Village details
+                const villageInfo = document.getElementById('village-info');
+                villageInfo.innerHTML = `
+                    <div class="restaurant-card">
+                        <h3>${data.village.name}</h3>
+                        <p>Address: ${data.village.location.address1}, ${data.village.location.city}, ${data.village.location.state} ${data.village.location.zip_code}</p>
+                        <p>Phone: ${data.village.phone}</p>
+                    </div>
+                `;
+
+                // Display weather and busy status
+                document.getElementById('weather-data').innerHTML = `
+                    <h3>Weather Conditions</h3>
+                    <p>Temperature: ${data.weather.temperature_f.toFixed(1)}°F</p>
+                    <p>Weather: ${data.weather.description}</p>
+                `;
+
+                document.getElementById('busy-status').innerHTML = `
+                    <h3>Restaurant Status</h3>
+                    <p>Current Popularity: ${data.busy_status.current_popularity}%</p>
+                    <p>Usual Popularity: ${data.busy_status.usual_popularity}%</p>
+                    <p>Status: ${data.busy_status.is_busy ? 'Busier than usual' : 'Normal'}</p>
+                `;
+
+                // Display price predictions
+                const predictionsDiv = document.getElementById('predictions');
+                data.price_predictions.forEach(pred => {
+                    const priceChange = pred.price_difference;
+                    const changeClass = priceChange > 0 ? 'price-change-positive' : 'price-change-negative';
+                    predictionsDiv.innerHTML += `
+                        <div class="price-prediction">
+                            <h3>${pred.item}</h3>
+                            <div class="menu-item">
+                                <span>Current Price: $${pred.current_price.toFixed(2)}</span>
+                                <span>Predicted Price: $${pred.predicted_price.toFixed(2)}</span>
+                                <span class="${changeClass}">
+                                    ${priceChange >= 0 ? '+' : ''}$${priceChange.toFixed(2)}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                // Display nearby restaurants
+                const nearbyList = document.getElementById('nearby-list');
+                data.nearby_restaurants.forEach(restaurant => {
+                    let menuItems = restaurant.menu_items.map(item => 
+                        `<div class="menu-item">
+                            <span>${item.name}</span>
+                            <span>$${item.price.toFixed(2)}</span>
+                         </div>`
+                    ).join('');
+
+                    nearbyList.innerHTML += `
+                        <div class="restaurant-card">
+                            <h3>${restaurant.name}</h3>
+                            <p>Address: ${restaurant.location.address1}, ${restaurant.location.city}</p>
+                            <p>Price Range: ${restaurant.price}</p>
+                            <div class="menu-items">
+                                <h4>Menu Items:</h4>
+                                ${menuItems}
+                            </div>
+                        </div>
+                    `;
+                });
+            })
+            .catch(error => {
+                console.error('Error loading data:', error);
+                document.body.innerHTML += `
+                    <div style="color: red; padding: 20px;">
+                        Error loading data. Please make sure data.json exists and is valid.
+                    </div>
+                `;
+            });
+    </script>
+</body>
+</html>
